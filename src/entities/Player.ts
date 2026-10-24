@@ -1,6 +1,6 @@
 import Phaser from 'phaser'
 import { PLAYER_SPEED } from '../config/GameConfig'
-
+import { directionFromStick, type Vec2 } from '../systems/touch-control'
 export class Player extends Phaser.Physics.Arcade.Sprite {
   private keys: Record<
     'W' | 'A' | 'S' | 'D' | 'UP' | 'DOWN' | 'LEFT' | 'RIGHT',
@@ -8,6 +8,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   >
   /** Last nonzero movement direction in radians; 0 when idle. */
   facing = 0
+  /** Active virtual-joystick direction (touch deferred pass). Zero when released. */
+  stick: Vec2 = { x: 0, y: 0 }
 
   constructor(
     scene: Phaser.Scene,
@@ -30,24 +32,35 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     >
   }
 
+  /** Virtual stick activation (touch deferred pass). */
+  setStick(x: number, y: number): void {
+    this.stick = { x, y }
+  }
+
+  /** Virtual stick release (touch deferred pass). */
+  clearStick(): void {
+    this.stick = { x: 0, y: 0 }
+  }
+
   update(): void {
     const { W, A, S, D, UP, DOWN, LEFT, RIGHT } = this.keys
-    let dx = 0
-    let dy = 0
-    if (A.isDown || LEFT.isDown) dx = -1
-    else if (D.isDown || RIGHT.isDown) dx = 1
-    if (W.isDown || UP.isDown) dy = -1
-    else if (S.isDown || DOWN.isDown) dy = 1
+    let dir: Vec2 = { x: 0, y: 0 }
+    let keyboardHeld = false
+    if (A.isDown || LEFT.isDown) { dir = { x: -1, y: 0 }; keyboardHeld = true }
+    else if (D.isDown || RIGHT.isDown) { dir = { x: 1, y: 0 }; keyboardHeld = true }
+    if (W.isDown || UP.isDown) { dir = { x: 0, y: -1 }; keyboardHeld = true }
+    else if (S.isDown || DOWN.isDown) { dir = { x: 0, y: 1 }; keyboardHeld = true }
 
-    if (dx === 0 && dy === 0) {
+    if (!keyboardHeld) dir = directionFromStick(this.stick)
+
+    if (dir.x === 0 && dir.y === 0) {
       this.setVelocity(0, 0)
       return
     }
 
-    const len = Math.hypot(dx, dy)
-    dx /= len
-    dy /= len
-    this.setVelocity(dx * PLAYER_SPEED, dy * PLAYER_SPEED)
-    this.facing = Math.atan2(dy, dx)
+    const len = Math.hypot(dir.x, dir.y)
+    dir = { x: dir.x / len, y: dir.y / len }
+    this.setVelocity(dir.x * PLAYER_SPEED, dir.y * PLAYER_SPEED)
+    this.facing = Math.atan2(dir.y, dir.x)
   }
 }

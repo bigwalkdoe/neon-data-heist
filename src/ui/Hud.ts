@@ -18,6 +18,7 @@ export class Hud {
   private heat: HeatSystem
   private mission: MissionSystem
   private info: HudInfo
+  onPauseRequest?: () => void
 
   private barFill: Phaser.GameObjects.Rectangle
   private heatLabel: Phaser.GameObjects.Text
@@ -38,11 +39,13 @@ export class Hud {
     heat: HeatSystem,
     mission: MissionSystem,
     info: HudInfo,
+    onPauseRequest?: () => void,
   ) {
     this.scene = scene
     this.heat = heat
     this.mission = mission
     this.info = info
+    this.onPauseRequest = onPauseRequest
 
     this.scene.add.rectangle(BAR_W / 2 + 18, 20, BAR_W + 4, BAR_H + 4, 0x000000, 0.5)
       .setDepth(900)
@@ -131,6 +134,14 @@ export class Hud {
       .setDepth(910)
       .setScrollFactor(0)
       .setVisible(false)
+
+    // Touch deferred pass: virtual pause button (bottom-right).
+    this.scene.add
+      .rectangle(764, 576, 36, 36, 0x000000, 0.7)
+      .setDepth(905)
+      .setScrollFactor(0)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => this.onPauseRequest?.())
   }
 
   update(): void {

@@ -26,6 +26,9 @@ export class HeistScene extends Phaser.Scene {
   private extractionHintLimit = 0
   private lastLaserTouchMs = 0
   private resultShown = false
+  private joystickBase = { x: 88, y: 576 }
+  private joystickHeld = false
+  private joystickRadius = 64
 
   constructor() {
     super('Heist')
@@ -121,12 +124,20 @@ export class HeistScene extends Phaser.Scene {
       fragsTotal: lvl.fragments.length,
       vaultTile: lvl.vault,
       cacheTile: lvl.cache,
+    }, () => {
+      if (!this.resultShown) this.togglePause()
     })
 
     // Outcome routing — win/lose/lockdown.
     this.events.on('mission:win', (heatPct: number) => this.endRun(this.mission.win(heatPct)))
     this.events.on('mission:caught', () => this.endRun(this.mission.lose('caught')))
     this.events.on('laser:burn', () => this.endRun(this.mission.lose('caught'))) // burned by lockdown = run over
+
+    // Touch deferred pass: virtual joystick → player stick.
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => this.onJoystickDown(p))
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => this.onJoystickMove(p))
+    this.input.on('pointerup', () => this.onJoystickUp())
+    this.input.on('pointerupoutside', () => this.onJoystickUp())
 
     // M → main menu from anywhere.
     const keyboard = this.input.keyboard
@@ -141,6 +152,30 @@ export class HeistScene extends Phaser.Scene {
         }
       })
     }
+  }
+
+  private onJoystickDown(p: Phaser.Input.Pointer): void {
+    if (this.paused || this.resultShown) return
+    const d = Math.hypot(p.x - this.joystickBase.x, p.y - this.joystickBase.y)
+    if (d > this.joystickRadius) return
+    this.joystickHeld = true
+    this.player.setStick(p.x - this.joystickBase.x, p.y - this.joystickBase.y)
+  }
+
+  private onJoystickMove(p: Phaser.Input.Pointer): void {
+    if (!this.joystickHeld) return
+    const d = Math.hypot(p.x - this.joystickBase.x, p.y - this.joystickBase.y)
+    if (d > this.joystickRadius) {
+      this.joystickHeld = false
+      this.player.clearStick()
+      return
+    }
+    this.player.setStick(p.x - this.joystickBase.x, p.y - this.joystickBase.y)
+  }
+
+  private onJoystickUp(): void {
+    this.joystickHeld = false
+    this.player.clearStick()
   }
 
   update(_time: number, delta: number): void {
