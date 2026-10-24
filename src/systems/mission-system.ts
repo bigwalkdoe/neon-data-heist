@@ -8,7 +8,7 @@ export interface RunResult {
   reason?: 'caught' | 'lockdown'
 }
 
-export type PickupKind = 'fragment' | 'vault' | 'cache' | 'upgrade'
+export type PickupKind = 'fragment' | 'vault' | 'cache'
 
 export interface CollectResult {
   kind: PickupKind
@@ -39,7 +39,6 @@ export class MissionSystem {
     vault: Tile,
     cache: Tile,
     extractionTiles: Tile[],
-    upgrades: Tile[] = [],
   ) {
     this.pickups = new Map()
     for (const f of fragments) {
@@ -47,9 +46,6 @@ export class MissionSystem {
     }
     this.pickups.set(key(vault), { kind: 'vault', credits: CREDITS.VAULT, heatCost: HEAT.VAULT })
     this.pickups.set(key(cache), { kind: 'cache', credits: CREDITS.CACHE, heatCost: HEAT.CACHE })
-    for (const u of upgrades) {
-      this.pickups.set(key(u), { kind: 'upgrade', credits: 0, heatCost: 0 })
-    }
     this.extractionTiles = extractionTiles
   }
 
