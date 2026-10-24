@@ -9,6 +9,7 @@ import { LaserSystem } from '../systems/laser-system'
 import { loadProfile, applyWin, saveProfile } from '../systems/profile'
 import { MissionSystem, type RunResult } from '../systems/mission-system'
 import { Hud } from '../ui/Hud'
+import { sfxPickup, sfxWin, sfxLose, sfxHeat } from '../systems/audio'
 
 export interface HeistSceneData {
   missionId?: string
@@ -129,9 +130,18 @@ export class HeistScene extends Phaser.Scene {
     })
 
     // Outcome routing — win/lose/lockdown.
-    this.events.on('mission:win', (heatPct: number) => this.endRun(this.mission.win(heatPct)))
-    this.events.on('mission:caught', () => this.endRun(this.mission.lose('caught')))
-    this.events.on('laser:burn', () => this.endRun(this.mission.lose('caught'))) // burned by lockdown = run over
+    this.events.on('mission:win', (heatPct: number) => {
+      sfxWin()
+      this.endRun(this.mission.win(heatPct))
+    })
+    this.events.on('mission:caught', () => {
+      sfxLose()
+      this.endRun(this.mission.lose('caught'))
+    })
+    this.events.on('laser:burn', () => {
+      sfxHeat()
+      this.endRun(this.mission.lose('caught')) // burned by lockdown = run over
+    })
 
     // Touch deferred pass: virtual joystick → player stick.
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => this.onJoystickDown(p))
@@ -250,6 +260,7 @@ export class HeistScene extends Phaser.Scene {
     if (!res) return
     this.heat.addHeat(res.heatCost)
     this.hud.showToast(`+${res.credits}`, obj.x, obj.y - 14)
+    sfxPickup()
     obj.destroy()
   }
 
