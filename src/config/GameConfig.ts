@@ -17,6 +17,8 @@ export const VISION = {
   RADIUS_PX: 140,
   HALF_ANGLE_DEG: 45,
   CONTACT_PX: 24,
+  FRENZY_RADIUS_MULT: 1.15,
+  ALERT_PURSUIT_MS: 4000,
 } as const
 
 export const HEAT = {
@@ -75,8 +77,9 @@ export const DRONE_ROUTES: DroneRoute[] = [
   { pts: [{ row: 8, col: 6 }, { row: 8, col: 17 }, { row: 12, col: 17 }, { row: 12, col: 6 }], loop: true },
   // D2: north corridor sweeper.
   { pts: [{ row: 6, col: 5 }, { row: 6, col: 17 }], loop: true },
-  // D3: entry guard, col-4 lane only — never sweeps the spawn/door lane.
-  { pts: [{ row: 7, col: 4 }, { row: 12, col: 4 }], loop: true },
+  // D3: entry guard, col-4 lane rows 10-13; spawn ({row:10,col:2}) stays outside
+  // the 45° vision wedge at every waypoint-facing (lane faces vertically).
+  { pts: [{ row: 10, col: 4 }, { row: 13, col: 4 }], loop: true },
   // D4: vault guard on the room's south strip (spawns at heat ≥ WAVE2_AT).
   { pts: [{ row: 6, col: 19 }, { row: 6, col: 23 }], loop: true, wave2: true },
   // D5: hall center vertical sweep (spawns at heat ≥ WAVE2_AT).
