@@ -102,6 +102,37 @@ describe('MissionSystem outcomes', () => {
   })
 })
 
+describe('MissionSystem upgrades', () => {
+  const FRAGS: Tile[] = [{ row: 2, col: 2 }]
+  const VAULT: Tile = { row: 3, col: 21 }
+  const CACHE: Tile = { row: 1, col: 23 }
+  const EXTRACTION: Tile[] = [{ row: 10, col: 1 }]
+
+  function freshWithUpgrades(upgrades: Tile[]): MissionSystem {
+    return new MissionSystem(FRAGS, VAULT, CACHE, EXTRACTION, upgrades)
+  }
+
+  it('collects an upgrade without moving credits or unlocking extraction', () => {
+    const m = freshWithUpgrades([{ row: 8, col: 13 }])
+    expect(m.collect({ row: 8, col: 13 })).toEqual({ kind: 'upgrade', credits: 0, heatCost: 0 })
+    expect(m.creditsStolen).toBe(0)
+    expect(m.canExtract()).toBe(false)
+  })
+
+  it('marks the upgrade collected; a second collect on the same tile is a no-op', () => {
+    const m = freshWithUpgrades([{ row: 8, col: 13 }])
+    expect(m.collect({ row: 8, col: 13 })).not.toBeNull()
+    expect(m.collect({ row: 8, col: 13 })).toBeNull()
+  })
+
+  it('an upgrade does not consume a fragment credit or fragment count', () => {
+    const m = freshWithUpgrades([{ row: 8, col: 13 }])
+    m.collect({ row: 8, col: 13 })
+    expect(m.fragmentCount).toBe(0)
+    expect(m.creditsStolen).toBe(0)
+  })
+})
+
 describe('MissionSystem terminal routing', () => {
   const FRAGS2 = [{ row: 2, col: 2 }]
   const VAULT2 = { row: 3, col: 21 }
