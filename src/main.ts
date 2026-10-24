@@ -5,7 +5,7 @@ import { MenuScene } from './scenes/MenuScene'
 import { HeistScene } from './scenes/HeistScene'
 
 // Bootstraps the game shell: shares the game viewport with the fixed facility map.
-new Phaser.Game({
+const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'app',
   width: 800,
@@ -20,3 +20,8 @@ new Phaser.Game({
   },
   scene: [BootScene, MenuScene, HeistScene],
 })
+
+// Dev-only handle for interactive verification (playwright/console debugging).
+if (import.meta.env.DEV) {
+  ;(window as unknown as Record<string, unknown>).__game__ = game
+}

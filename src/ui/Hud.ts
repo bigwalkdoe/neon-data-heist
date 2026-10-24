@@ -217,7 +217,10 @@ export class Hud {
     this.pauseLayer.setVisible(paused)
   }
 
-  showResult(r: RunResult, meta?: { bestLabel?: string; nextLabel?: string }): void {
+  showResult(
+    r: RunResult,
+    meta?: { bestLabel?: string; nextLabel?: string; closingLabel?: string },
+  ): void {
     this.destroyResult()
     const layer: Phaser.GameObjects.GameObject[] = []
     layer.push(
@@ -272,7 +275,14 @@ export class Hud {
         this.scene.add.text(cx, cy - 6, `HAUL LOST ▸ ${this.mission.creditsStolen}`, mono(18, COLORS.hudText)).setOrigin(0.5).setScrollFactor(0),
       )
     }
-    if (meta?.nextLabel) {
+    if (meta?.closingLabel) {
+      layer.push(
+        this.scene.add
+          .text(cx, cy + 96, meta.closingLabel, mono(15, COLORS.magenta))
+          .setOrigin(0.5)
+          .setScrollFactor(0),
+      )
+    } else if (meta?.nextLabel) {
       layer.push(
         this.scene.add
           .text(cx, cy + 96, meta.nextLabel, mono(15, COLORS.magenta))

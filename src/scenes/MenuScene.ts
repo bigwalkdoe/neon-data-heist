@@ -113,14 +113,15 @@ export class MenuScene extends Phaser.Scene {
       const selected = index === this.selected
       const unlocked = this.isUnlocked(index)
       const y = top + index * rowH
+      const fontSize = unlocked ? 20 : 16
 
       const label = unlocked
         ? `${selected ? '▸ ' : '  '}MISSION 0${index + 1} — ${mission.name}`
-        : `  MISSION 0${index + 1} — ${mission.name}   [LOCKED — CLEAR MISSION 0${index}]`
+        : `  MISSION 0${index + 1} — ${mission.name}`
       const row = this.add
         .text(cx, y, label, {
           fontFamily: 'monospace',
-          fontSize: '20px',
+          fontSize: `${fontSize}px`,
           color: unlocked
             ? selected
               ? COLORS.magenta
@@ -139,19 +140,21 @@ export class MenuScene extends Phaser.Scene {
       items.push(row)
       if (selected && unlocked) selectedRows.push(row)
 
-      const best = this.profile.best[mission.id]
-      if (unlocked) {
-        items.push(
-          this.add
-            .text(cx, y + 26, best !== undefined ? `BEST ▸ ${best}` : '— NO PULLS YET —', {
-              fontFamily: 'monospace',
-              fontSize: '13px',
-              color: COLORS.hudText,
-            })
-            .setOrigin(0.5)
-            .setAlpha(unlocked ? (selected ? 0.9 : 0.6) : 0.35),
-        )
-      }
+      const detail = unlocked
+        ? this.profile.best[mission.id] !== undefined
+          ? `BEST ▸ ${this.profile.best[mission.id]}`
+          : '— NO PULLS YET —'
+        : `LOCKED — CLEAR MISSION 0${index}`
+      items.push(
+        this.add
+          .text(cx, y + 26, detail, {
+            fontFamily: 'monospace',
+            fontSize: '13px',
+            color: unlocked ? COLORS.hudText : COLORS.warningRed,
+          })
+          .setOrigin(0.5)
+          .setAlpha(unlocked ? (selected ? 0.9 : 0.6) : 0.7),
+      )
     })
 
     this.rowsLayer = this.add.container(0, 0, items)

@@ -54,6 +54,8 @@ export class HeistScene extends Phaser.Scene {
     // Per-run state resets here: scene.restart() re-runs create() only.
     this.paused = false
     this.extractionHintLimit = 0
+    this.resultShown = false
+    this.lastLaserTouchMs = 0
 
     // Facility: floor tiles first (render order), then static wall bodies.
     for (let row = 0; row < LEVEL_ROWS; row++) {
@@ -167,7 +169,7 @@ export class HeistScene extends Phaser.Scene {
     this.physics.pause()
 
     // Persistent meta: best per mission + next-mission unlock on win.
-    const meta: { bestLabel?: string; nextLabel?: string } = {}
+    const meta: { bestLabel?: string; nextLabel?: string; closingLabel?: string } = {}
     const missionIndex = MISSIONS.findIndex((m) => m.id === this.missionId)
     if (result.outcome === 'WON') {
       const cur = loadProfile(window.localStorage)
@@ -180,6 +182,9 @@ export class HeistScene extends Phaser.Scene {
     const next = MISSIONS[missionIndex + 1]
     if (next && (result.outcome === 'WON' || loadProfile(window.localStorage).unlockedThrough > missionIndex)) {
       meta.nextLabel = `N — NEXT ▸ MISSION 0${missionIndex + 2} — ${next.name}`
+    } else if (result.outcome === 'WON') {
+      // End of the disclosed mission list — the final facility is cleared.
+      meta.closingLabel = 'ALL DATA SECURED — THE COMPANY WILL NOTICE'
     }
     this.hud.showResult(result, meta)
 
