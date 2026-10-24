@@ -1,9 +1,9 @@
 import Phaser from 'phaser'
-import { PLAYER_SPEED } from '../config/GameConfig'
+import { PLAYER_SPEED, SPRINT_SPEED } from '../config/GameConfig'
 import { directionFromStick, type Vec2 } from '../systems/touch-control'
 export class Player extends Phaser.Physics.Arcade.Sprite {
   private keys: Record<
-    'W' | 'A' | 'S' | 'D' | 'UP' | 'DOWN' | 'LEFT' | 'RIGHT',
+    'W' | 'A' | 'S' | 'D' | 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'SHIFT',
     Phaser.Input.Keyboard.Key
   >
   /** Last nonzero movement direction in radians; 0 when idle. */
@@ -25,9 +25,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     const keyboard = scene.input.keyboard
     if (!keyboard) throw new Error('no keyboard input available')
-    this.keys = keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT',
+    this.keys = keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SHIFT',
     ) as Record<
-      'W' | 'A' | 'S' | 'D' | 'UP' | 'DOWN' | 'LEFT' | 'RIGHT',
+      'W' | 'A' | 'S' | 'D' | 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'SHIFT',
       Phaser.Input.Keyboard.Key
     >
   }
@@ -43,7 +43,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   update(): void {
-    const { W, A, S, D, UP, DOWN, LEFT, RIGHT } = this.keys
+    const { W, A, S, D, UP, DOWN, LEFT, RIGHT, SHIFT } = this.keys
     let dir: Vec2 = { x: 0, y: 0 }
     let keyboardHeld = false
     if (A.isDown || LEFT.isDown) { dir = { x: -1, y: 0 }; keyboardHeld = true }
@@ -60,7 +60,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     const len = Math.hypot(dir.x, dir.y)
     dir = { x: dir.x / len, y: dir.y / len }
-    this.setVelocity(dir.x * PLAYER_SPEED, dir.y * PLAYER_SPEED)
+    const speed = SHIFT.isDown ? SPRINT_SPEED : PLAYER_SPEED
+    this.setVelocity(dir.x * speed, dir.y * speed)
     this.facing = Math.atan2(dir.y, dir.x)
   }
 }

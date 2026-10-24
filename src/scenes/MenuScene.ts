@@ -2,6 +2,7 @@ import Phaser from 'phaser'
 import { COLORS } from '../config/GameConfig'
 import { MISSIONS } from '../config/missions'
 import { loadProfile, type Profile } from '../systems/profile'
+import { getMuted, toggleMute } from '../systems/audio'
 
 // Mission select. Reads the persistent profile (unlocks + bests), lets the
 // player pick any unlocked mission, and starts Heist with a missionId.
@@ -9,6 +10,7 @@ export class MenuScene extends Phaser.Scene {
   private profile: Profile = { unlockedThrough: 0, best: {} }
   private selected = 0
   private rowsLayer: Phaser.GameObjects.Container | null = null
+  private muteText: Phaser.GameObjects.Text | null = null
 
   constructor() {
     super('Menu')
@@ -17,6 +19,7 @@ export class MenuScene extends Phaser.Scene {
   create(): void {
     this.profile = loadProfile(window.localStorage)
     this.selected = Math.min(this.profile.unlockedThrough, MISSIONS.length - 1)
+    getMuted()
 
     this.cameras.main.setBackgroundColor(COLORS.pageBg)
     const cx = this.scale.width / 2
@@ -52,6 +55,17 @@ export class MenuScene extends Phaser.Scene {
       keyboard.on('keydown-DOWN', next)
       keyboard.on('keydown-SPACE', () => this.confirm())
       keyboard.on('keydown-ENTER', () => this.confirm())
+      keyboard.on('keydown-M', () => {
+        const muted = toggleMute()
+        if (this.muteText) {
+          this.muteText.setText(muted ? 'SOUND: OFF (M)' : 'SOUND: ON (M)')
+        }
+      })
+      keyboard.on('keydown-F', () => {
+        const fs = this.scale.isFullscreen
+        if (!fs) void this.scale.startFullscreen()
+        else void this.scale.stopFullscreen()
+      })
     }
   }
 
@@ -182,12 +196,28 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setAlpha(0.8)
     this.add
-      .text(cx, cy - 34, 'PULL AND EXTRACT. ESCAPE WITH LOW HEAT FOR THE BONUS.', {
+      .text(cx, cy - 48, 'SHIFT — SPRINT   M — MUTE   F — FULLSCREEN   R — RESTART', {
+        fontFamily: 'monospace',
+        fontSize: '12px',
+        color: COLORS.hudText,
+      })
+      .setOrigin(0.5)
+      .setAlpha(0.6)
+    this.add
+      .text(cx, cy - 30, 'PULL AND EXTRACT. ESCAPE WITH LOW HEAT FOR THE BONUS.', {
         fontFamily: 'monospace',
         fontSize: '12px',
         color: COLORS.hudText,
       })
       .setOrigin(0.5)
       .setAlpha(0.55)
+    this.muteText = this.add
+      .text(cx, cy - 12, getMuted() ? 'SOUND: OFF (M)' : 'SOUND: ON (M)', {
+        fontFamily: 'monospace',
+        fontSize: '12px',
+        color: COLORS.hudText,
+      })
+      .setOrigin(0.5)
+      .setAlpha(0.5)
   }
 }

@@ -5,6 +5,7 @@ export const TILE = 32
 export const LEVEL_ROWS = 20
 export const LEVEL_COLS = 25
 export const PLAYER_SPEED = 160
+export const SPRINT_SPEED = 240
 
 export const DRONE_SPEED = {
   PATROL: 70,

@@ -9,7 +9,7 @@ import { LaserSystem } from '../systems/laser-system'
 import { loadProfile, applyWin, saveProfile } from '../systems/profile'
 import { MissionSystem, type RunResult } from '../systems/mission-system'
 import { Hud } from '../ui/Hud'
-import { sfxPickup, sfxWin, sfxLose, sfxHeat } from '../systems/audio'
+import { sfxPickup, sfxWin, sfxLose, sfxHeat, toggleMute } from '../systems/audio'
 
 export interface HeistSceneData {
   missionId?: string
@@ -104,7 +104,10 @@ export class HeistScene extends Phaser.Scene {
 
     // Security AI: patrol drones with vision cones; wave two at heat ≥ WAVE2_AT.
     this.drones = new DroneSystem(this, facility.routes, wallLayer, this.heat, {
-      onSpot: () => this.heat.addHeat(HEAT.SPOTTED),
+      onSpot: () => {
+        this.heat.addHeat(HEAT.SPOTTED)
+        this.cameras.main.shake(120, 0.004)
+      },
       onCaught: () => this.events.emit('mission:caught'),
     })
 
@@ -132,14 +135,17 @@ export class HeistScene extends Phaser.Scene {
     // Outcome routing — win/lose/lockdown.
     this.events.on('mission:win', (heatPct: number) => {
       sfxWin()
+      this.cameras.main.shake(160, 0.004)
       this.endRun(this.mission.win(heatPct))
     })
     this.events.on('mission:caught', () => {
       sfxLose()
+      this.cameras.main.shake(220, 0.006)
       this.endRun(this.mission.lose('caught'))
     })
     this.events.on('laser:burn', () => {
       sfxHeat()
+      this.cameras.main.shake(200, 0.006)
       this.endRun(this.mission.lose('caught')) // burned by lockdown = run over
     })
 
@@ -149,16 +155,22 @@ export class HeistScene extends Phaser.Scene {
     this.input.on('pointerup', () => this.onJoystickUp())
     this.input.on('pointerupoutside', () => this.onJoystickUp())
 
-    // M → main menu from anywhere.
+    // M → toggle mute; F → fullscreen; R → restart run.
     const keyboard = this.input.keyboard
     if (keyboard) {
       keyboard.on('keydown-ESC', () => this.togglePause())
       keyboard.on('keydown-M', () => {
-        if (!this.resultShown) {
-          this.resultShown = true
+        toggleMute()
+      })
+      keyboard.on('keydown-F', () => {
+        const fs = this.scale.isFullscreen
+        if (!fs) void this.scale.startFullscreen()
+        else void this.scale.stopFullscreen()
+      })
+      keyboard.on('keydown-R', () => {
+        if (!this.resultShown && !this.paused) {
           this.tweens.killAll()
-          this.scene.stop('Heist')
-          this.scene.start('Menu')
+          this.scene.restart({ missionId: this.missionId })
         }
       })
     }

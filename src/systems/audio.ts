@@ -3,6 +3,32 @@
 
 let ctx: AudioContext | null = null
 let master: GainNode | null = null
+const MUTE_KEY = 'neon-data-heist:mute'
+
+function isMuted(): boolean {
+  try {
+    return localStorage.getItem(MUTE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function toggleMute(): boolean {
+  try {
+    const muted = !isMuted()
+    localStorage.setItem(MUTE_KEY, muted ? '1' : '0')
+    if (master) master.gain.value = muted ? 0 : 0.22
+    return muted
+  } catch {
+    return isMuted()
+  }
+}
+
+export function getMuted(): boolean {
+  const muted = isMuted()
+  if (master) master.gain.value = muted ? 0 : 0.22
+  return muted
+}
 
 function ensureCtx(): AudioContext | null {
   try {
@@ -10,7 +36,7 @@ function ensureCtx(): AudioContext | null {
       const AC: typeof AudioContext = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
       ctx = new AC()
       master = ctx.createGain()
-      master.gain.value = 0.22
+      master.gain.value = isMuted() ? 0 : 0.22
       master.connect(ctx.destination)
     }
     if (ctx.state === 'suspended') void ctx.resume()
