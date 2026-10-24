@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { buildLevelData, tileToPx } from './level'
-import { LEVEL_ROWS, LEVEL_COLS, TILE, DRONE_ROUTES } from './GameConfig'
+import { LEVEL_ROWS, LEVEL_COLS, TILE } from './GameConfig'
+import { KYOSHI_DELTA_VAULT } from './missions'
 
 describe('buildLevelData', () => {
   it('map is 20 rows, every row 25 chars', () => {
@@ -81,7 +82,7 @@ describe('buildLevelData', () => {
 
   it('every drone route point is floor', () => {
     const lvl = buildLevelData()
-    for (const route of DRONE_ROUTES) {
+    for (const route of KYOSHI_DELTA_VAULT.routes) {
       for (const p of route.pts) expect(lvl.walls[p.row][p.col]).toBe(false)
     }
   })

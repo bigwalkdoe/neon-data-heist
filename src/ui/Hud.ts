@@ -217,7 +217,7 @@ export class Hud {
     this.pauseLayer.setVisible(paused)
   }
 
-  showResult(r: RunResult): void {
+  showResult(r: RunResult, meta?: { bestLabel?: string; nextLabel?: string }): void {
     this.destroyResult()
     const layer: Phaser.GameObjects.GameObject[] = []
     layer.push(
@@ -251,6 +251,14 @@ export class Hud {
         this.scene.add.text(cx, cy - 6, `COLD ESCAPE ▸ +${r.bonus}`, mono(20, COLORS.hudText)).setOrigin(0.5).setScrollFactor(0),
         this.scene.add.text(cx, cy + 30, `SCORE ▸ ${r.total}`, { ...mono(26, COLORS.magenta), fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0),
       )
+      if (meta?.bestLabel) {
+        layer.push(
+          this.scene.add
+            .text(cx, cy + 66, meta.bestLabel, mono(15, COLORS.hudText))
+            .setOrigin(0.5)
+            .setScrollFactor(0),
+        )
+      }
     } else {
       const reasonText = r.reason === 'lockdown' ? 'LOCKDOWN' : 'CAUGHT'
       layer.push(
@@ -264,9 +272,17 @@ export class Hud {
         this.scene.add.text(cx, cy - 6, `HAUL LOST ▸ ${this.mission.creditsStolen}`, mono(18, COLORS.hudText)).setOrigin(0.5).setScrollFactor(0),
       )
     }
+    if (meta?.nextLabel) {
+      layer.push(
+        this.scene.add
+          .text(cx, cy + 96, meta.nextLabel, mono(15, COLORS.magenta))
+          .setOrigin(0.5)
+          .setScrollFactor(0),
+      )
+    }
     layer.push(
       this.scene.add
-        .text(cx, cy + 78, 'R / SPACE — RETRY      M — MENU', mono(14, COLORS.hudText))
+        .text(cx, cy + 118, 'R / SPACE — RETRY      M — MENU', mono(14, COLORS.hudText))
         .setOrigin(0.5)
         .setScrollFactor(0),
     )

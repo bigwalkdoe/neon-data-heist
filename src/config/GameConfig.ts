@@ -65,27 +65,6 @@ export interface DroneRoute {
   wave2?: boolean
 }
 
-export const LASERS: LaserSpec[] = [
-  // Hall mid barrier.
-  { col: 11, rowStart: 7, rowEnd: 12, ON_MS: 1600, OFF_MS: 2400, PHASE: 0 },
-  // Vault doorway.
-  { col: 18, rowStart: 3, rowEnd: 4, ON_MS: 1200, OFF_MS: 2800, PHASE: 800 },
-]
-
-export const DRONE_ROUTES: DroneRoute[] = [
-  // D1: hall rectangle (rows 8/12 lanes; pillars sit at rows 9–10, legs clear them).
-  { pts: [{ row: 8, col: 6 }, { row: 8, col: 17 }, { row: 12, col: 17 }, { row: 12, col: 6 }], loop: true },
-  // D2: north corridor sweeper.
-  { pts: [{ row: 6, col: 5 }, { row: 6, col: 17 }], loop: true },
-  // D3: entry guard, col-4 lane rows 10-13; spawn ({row:10,col:2}) stays outside
-  // the 45° vision wedge at every waypoint-facing (lane faces vertically).
-  { pts: [{ row: 10, col: 4 }, { row: 13, col: 4 }], loop: true },
-  // D4: vault guard on the room's south strip (spawns at heat ≥ WAVE2_AT).
-  { pts: [{ row: 6, col: 19 }, { row: 6, col: 23 }], loop: true, wave2: true },
-  // D5: hall center vertical sweep (spawns at heat ≥ WAVE2_AT).
-  { pts: [{ row: 8, col: 12 }, { row: 12, col: 12 }], loop: true, wave2: true },
-]
-
 // Neon palette shared by BootScene texture generation and HUD.
 export const COLORS = {
   pageBg: '#05070f',

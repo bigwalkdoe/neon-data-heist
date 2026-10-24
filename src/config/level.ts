@@ -1,6 +1,6 @@
 import { LEVEL_ROWS, LEVEL_COLS, TILE, type Tile } from './GameConfig'
 
-// The authored facility: KYOSHI-DELTA VAULT.
+// Authored facility maps. Same vocabulary, one per mission:
 // '#' wall · '.' floor · P player spawn · E extraction door ·
 // F fragment (80 cr) · V vault jackpot · C bonus cache.
 export const LEVEL_MAP: string[] = [
@@ -26,6 +26,34 @@ export const LEVEL_MAP: string[] = [
   '#########################', // row 19
 ]
 
+// MISSION 02 — MERIDIAN-9 BLACKSITE. Denser blacksite: laser-gated vault room
+// (NE), an NW cache pocket, a full-height west extraction corridor with a
+// patrolling guard lane, a two-pillar atrium with a long laser barrier, and
+// south-east data racks behind a two-cell blink door. Verify with
+// missions.test.ts (counts, floor placement, routes/lasers over floor).
+export const MERIDIAN_9_MAP: string[] = [
+  '#########################', // row 0
+  '#.C#........F.....#.....#', // row 1
+  '#..#..................V.#', // row 2
+  '##.#....................#', // row 3
+  '#...#.............#.....#', // row 4
+  '#...#.............#######', // row 5
+  '#...#.....#.....F.......#', // row 6
+  '#...#...................#', // row 7
+  '#...#.F.................#', // row 8
+  '#E..#.........#.........#', // row 9
+  '#E......................#', // row 10
+  '#E......................#', // row 11
+  '#...#...................#', // row 12
+  '#...#.............#######', // row 13
+  '#...#.............#.....#', // row 14
+  '#......#####............#', // row 15
+  '#...#...............F...#', // row 16
+  '#...#..F..........#.....#', // row 17
+  '#.P.#.............#######', // row 18
+  '#########################', // row 19
+]
+
 export interface LevelData {
   walls: boolean[][]
   playerSpawn: Tile
@@ -44,13 +72,13 @@ function requireCount(rows: Tile[], count: number, what: string): void {
   if (rows.length !== count) throw new Error(`level map must contain exactly ${count} ${what}, found ${rows.length}`)
 }
 
-export function buildLevelData(): LevelData {
-  if (LEVEL_MAP.length !== LEVEL_ROWS) {
-    throw new Error(`level map must have ${LEVEL_ROWS} rows, found ${LEVEL_MAP.length}`)
+export function buildLevelData(map: string[] = LEVEL_MAP): LevelData {
+  if (map.length !== LEVEL_ROWS) {
+    throw new Error(`level map must have ${LEVEL_ROWS} rows, found ${map.length}`)
   }
 
   const walls: boolean[][] = []
-  LEVEL_MAP.forEach((line, row) => {
+  map.forEach((line, row) => {
     if (line.length !== LEVEL_COLS) {
       throw new Error(`level map row ${row} must have ${LEVEL_COLS} chars, found ${line.length}`)
     }
@@ -63,7 +91,7 @@ export function buildLevelData(): LevelData {
   const caches: Tile[] = []
   let playerSpawn: Tile | null = null
 
-  LEVEL_MAP.forEach((line, row) => {
+  map.forEach((line, row) => {
     [...line].forEach((ch, col) => {
       switch (ch) {
         case 'P':

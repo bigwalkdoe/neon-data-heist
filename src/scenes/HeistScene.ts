@@ -1,12 +1,18 @@
 import Phaser from 'phaser'
 import { buildLevelData, tileToPx } from '../config/level'
-import { TILE, LEVEL_COLS, LEVEL_ROWS, COLORS, HEAT, DRONE_ROUTES, PLAYER_SPEED, type Tile } from '../config/GameConfig'
+import { TILE, LEVEL_COLS, LEVEL_ROWS, COLORS, HEAT, PLAYER_SPEED, type Tile } from '../config/GameConfig'
+import { MISSIONS, getMission } from '../config/missions'
 import { Player } from '../entities/Player'
 import { HeatSystem } from '../systems/heat-system'
 import { DroneSystem } from '../systems/drone-system'
 import { LaserSystem } from '../systems/laser-system'
+import { loadProfile, applyWin, saveProfile } from '../systems/profile'
 import { MissionSystem, type RunResult } from '../systems/mission-system'
 import { Hud } from '../ui/Hud'
+
+export interface HeistSceneData {
+  missionId?: string
+}
 
 export class HeistScene extends Phaser.Scene {
   private player!: Player
@@ -15,6 +21,7 @@ export class HeistScene extends Phaser.Scene {
   private hud!: Hud
   private drones!: DroneSystem
   private lasers!: LaserSystem
+  private missionId = MISSIONS[0].id
   private paused = false
   private extractionHintLimit = 0
   private lastLaserTouchMs = 0
@@ -24,8 +31,17 @@ export class HeistScene extends Phaser.Scene {
     super('Heist')
   }
 
+  init(data: HeistSceneData): void {
+    // Unknown ids fall back to the first mission, never break the boot flow.
+    this.missionId =
+      data?.missionId && MISSIONS.some((m) => m.id === data.missionId)
+        ? data.missionId
+        : MISSIONS[0].id
+  }
+
   create(): void {
-    const lvl = buildLevelData()
+    const facility = getMission(this.missionId)
+    const lvl = buildLevelData(facility.map)
     this.cameras.main.setBackgroundColor(COLORS.pageBg)
 
     this.heat = new HeatSystem()
@@ -81,13 +97,13 @@ export class HeistScene extends Phaser.Scene {
     this.player = new Player(this, tileToPx(lvl.playerSpawn), wallLayer)
 
     // Security AI: patrol drones with vision cones; wave two at heat ≥ WAVE2_AT.
-    this.drones = new DroneSystem(this, DRONE_ROUTES, wallLayer, this.heat, {
+    this.drones = new DroneSystem(this, facility.routes, wallLayer, this.heat, {
       onSpot: () => this.heat.addHeat(HEAT.SPOTTED),
       onCaught: () => this.events.emit('mission:caught'),
     })
 
     // Security AI: blinking laser grids — touching an ON strip burns heat.
-    this.lasers = new LaserSystem(this, wallLayer)
+    this.lasers = new LaserSystem(this, wallLayer, facility.lasers)
 
     this.physics.add.overlap(this.player, pickupGroup, (_player, obj) =>
       this.onPickup(obj as Phaser.Physics.Arcade.Sprite),
@@ -149,17 +165,42 @@ export class HeistScene extends Phaser.Scene {
     this.resultShown = true
     this.paused = true
     this.physics.pause()
-    this.hud.showResult(result)
+
+    // Persistent meta: best per mission + next-mission unlock on win.
+    const meta: { bestLabel?: string; nextLabel?: string } = {}
+    const missionIndex = MISSIONS.findIndex((m) => m.id === this.missionId)
+    if (result.outcome === 'WON') {
+      const cur = loadProfile(window.localStorage)
+      const { profile, isNewBest } = applyWin(cur, this.missionId, result.total, missionIndex)
+      saveProfile(window.localStorage, profile)
+      meta.bestLabel = isNewBest
+        ? `NEW BEST ▸ ${profile.best[this.missionId]}`
+        : `BEST ▸ ${profile.best[this.missionId]}`
+    }
+    const next = MISSIONS[missionIndex + 1]
+    if (next && (result.outcome === 'WON' || loadProfile(window.localStorage).unlockedThrough > missionIndex)) {
+      meta.nextLabel = `N — NEXT ▸ MISSION 0${missionIndex + 2} — ${next.name}`
+    }
+    this.hud.showResult(result, meta)
+
     const keyboard = this.input.keyboard
     if (keyboard) {
       keyboard.once('keydown-R', () => this.retryRun())
       keyboard.once('keydown-SPACE', () => this.retryRun())
+      if (meta.nextLabel && next) {
+        keyboard.once('keydown-N', () => this.jumpToNext(next.id))
+      }
     }
   }
 
   private retryRun(): void {
     this.tweens.killAll()
     this.scene.restart()
+  }
+
+  private jumpToNext(nextId: string): void {
+    this.tweens.killAll()
+    this.scene.start('Heist', { missionId: nextId } satisfies HeistSceneData)
   }
 
   private onPickup(obj: Phaser.Physics.Arcade.Sprite): void {

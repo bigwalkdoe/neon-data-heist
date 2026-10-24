@@ -1,15 +1,20 @@
 import Phaser from 'phaser'
-import { type LaserSpec, LASERS, TILE } from '../config/GameConfig'
+import { type LaserSpec, TILE } from '../config/GameConfig'
 
 // Blinking laser grids: vertical strips across one tile column, cycling ON/OFF.
 // Timing is wall-clock phase per strip — frames drift, the pattern doesn't.
+// Strip specs are per-mission; the scene passes its mission's set.
 export class LaserSystem {
   private strips: { image: Phaser.GameObjects.Image; spec: LaserSpec }[] = []
   private scene: Phaser.Scene
 
-  constructor(scene: Phaser.Scene, _wallLayer: Phaser.Physics.Arcade.StaticGroup) {
+  constructor(
+    scene: Phaser.Scene,
+    _wallLayer: Phaser.Physics.Arcade.StaticGroup,
+    specs: LaserSpec[],
+  ) {
     this.scene = scene
-    for (const spec of LASERS) {
+    for (const spec of specs) {
       for (let row = spec.rowStart; row <= spec.rowEnd; row++) {
         const img = this.scene.add.image(
           spec.col * TILE,

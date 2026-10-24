@@ -1,7 +1,6 @@
 import Phaser from 'phaser'
 import { isPlayerSeen, type XY } from './vision'
 import {
-  DRONE_ROUTES,
   DRONE_SPEED,
   HEAT,
   VISION,
@@ -9,6 +8,7 @@ import {
   type DroneRoute,
 } from '../config/GameConfig'
 import { tileToPx } from '../config/level'
+import { wave2Routes } from '../config/missions'
 import { HeatSystem } from './heat-system'
 
 export { isPlayerSeen } from './vision'
@@ -159,6 +159,7 @@ export class DroneSystem {
   private wallLayer: Phaser.Physics.Arcade.StaticGroup
   private heat: HeatSystem
   private callbacks: DroneHooks
+  private routes: DroneRoute[]
 
   constructor(
     scene: Phaser.Scene,
@@ -168,6 +169,7 @@ export class DroneSystem {
     callbacks: DroneHooks,
   ) {
     this.scene = scene
+    this.routes = routes
     this.wallLayer = wallLayer
     this.heat = heat
     this.callbacks = callbacks
@@ -180,10 +182,11 @@ export class DroneSystem {
   }
 
   // Wave two activates once, at HEAT.WAVE2_AT — the facility escalates.
+  // Routes come from this system's own mission, never a global.
   spawnWave2IfDue(): void {
     if (this.wave2Spawned || this.heat.pct < HEAT.WAVE2_AT) return
     this.wave2Spawned = true
-    for (const route of DRONE_ROUTES.filter((r) => r.wave2)) {
+    for (const route of wave2Routes(this.routes)) {
       this.drones.push(
         new Drone(this.scene, route.pts, true, this.wallLayer, this.callbacks),
       )
